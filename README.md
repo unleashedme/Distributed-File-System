@@ -9,7 +9,7 @@ This project simulates the core architectural patterns of enterprise storage sys
 The system is divided into three primary components operating over raw TCP sockets:
 
 * **NameNode (The Master):** A stateless metadata router. It maintains the hierarchical file tree and orchestrates network traffic, but never touches the physical data bytes.
-* **DataNode (The Worker):** The stateful storage engines. They hold the physical 64KB file chunks, perform continuous cryptographic self-audits, and handle peer-to-peer data replication.
+* **DataNode (The Worker):** The stateful storage engines. They hold the physical 1 MB file chunks, perform continuous cryptographic self-audits, and handle peer-to-peer data replication.
 * **Client:** The interface that shreds local files into chunks, negotiates routing with the NameNode, streams bytes to the DataNodes, and dynamically verifies integrity during reassembly.
 
 ## Core Features
@@ -24,7 +24,7 @@ Physical routing maps are highly volatile. Therefore, the NameNode does not log 
 TCP guarantees packet delivery, but not long-term physical disk integrity. DFS implements a "Trust but Verify" cryptographic model:
 
 * **Active Verification (Data Scrubbing):** DataNodes run a background thread that calculates the MD5 hash of every chunk every 30 seconds and reports it to the NameNode.
-* **Destination Verification:** During peer-to-peer pipeline replication, the receiving DataNode recalculates the incoming MD5 hash in memory before saving it to disk, instantly terminating the transfer if a peer attempts to replicate corrupted data.
+* **Client-Side Verification:** At upload time the Client records the MD5 hash of every chunk with the NameNode. During download, each chunk is staged in a quarantine file and its hash is checked against the recorded value before it is appended to the output, so a corrupted replica aborts the download instead of producing a poisoned file.
 
 ### 4. Autonomous Self-Healing & Tombstoning
 If a DataNode goes offline or reports a corrupted block via the Scrubber, the NameNode instantly excises that node from the routing table and commands a surviving replica to clone the data to a new healthy node.
@@ -40,8 +40,8 @@ In the event of a simultaneous multi-node failure resulting in zero valid replic
 ### Installation & Build
 This project uses Maven to manage builds and package executable JAR files. Clone the repository and run the build command from the root directory:
 ```bash
-git clone https://github.com/yourusername/java-distributed-file-system.git
-cd java-distributed-file-system
+git clone https://github.com/unleashedme/Distributed-File-System.git
+cd Distributed-File-System
 mvn clean package
 ```
 This will generate `NameNode.jar` and `DataNode.jar` inside the `/target` directory.
