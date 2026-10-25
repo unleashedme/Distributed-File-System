@@ -34,7 +34,7 @@ In the event of a simultaneous multi-node failure resulting in zero valid replic
 ## Getting Started
 
 ### Prerequisites
-* Java 21 or higher
+* Java 24 or higher (the build targets Java 24)
 * Apache Maven
 
 ### Installation & Build
@@ -75,6 +75,27 @@ java -jar target/DataNode.jar Node-Gamma
 **3. Run the Client:**
 (Currently executed via IDE or by compiling the Client classes directly, pointing to your local file paths).
 
+## Running Tests
+
+The project has a JUnit 5 test suite covering the common utilities, the file splitter, the WAL, NameNode request handling and self-healing, DataNode storage and replication, and a full client upload/download round trip.
+
+Run it from the root directory with a JDK 24 or newer:
+
+```bash
+mvn test
+```
+
+If your default `java` is older than 24, point Maven at a newer JDK for that command:
+
+```bash
+JAVA_HOME=/path/to/jdk-24 mvn test
+```
+
+Notes:
+* The tests run against real sockets on `127.0.0.1`, so no external services are needed.
+* `ClientRoundTripTest` binds the NameNode port from `dfs.properties` (9000 by default) and is skipped if that port is already in use, for example by a running NameNode. Stop any local cluster first to run the whole suite.
+* The tests back up and restore any existing `namenode_wal.log` and clean up the DataNode storage directories they create.
+
 ## Tech Stack
 - **Language:** Java (Core)
 
@@ -94,21 +115,37 @@ Distributed-File-System/
 ├── pom.xml                     
 ├── dfs.properties              
 └── src/
-    └── main/
+    ├── main/
+    │   └── java/
+    │       └── dfs/
+    │           ├── common/
+    │           │   ├── Constants.java
+    │           │   ├── ConfigManager.java
+    │           │   ├── FileMetadata.java
+    │           │   └── HashUtil.java
+    │           ├── namenode/
+    │           │   ├── NameNode.java
+    │           │   └── WALManager.java
+    │           ├── datanode/
+    │           │   └── DataNode.java
+    │           └── client/
+    │               ├── ClientUploader.java
+    │               ├── ClientDownloader.java
+    │               └── FileSplitter.java
+    └── test/
         └── java/
             └── dfs/
+                ├── TestUtils.java
                 ├── common/
-                │   ├── Constants.java
-                │   ├── ConfigManager.java
-                │   ├── FileMetadata.java
-                │   └── HashUtil.java
+                │   ├── ConfigManagerTest.java
+                │   ├── FileMetadataTest.java
+                │   └── HashUtilTest.java
                 ├── namenode/
-                │   ├── NameNode.java
-                │   └── WALManager.java
+                │   ├── NameNodeTest.java
+                │   └── WALManagerTest.java
                 ├── datanode/
-                │   └── DataNode.java
+                │   └── DataNodeTest.java
                 └── client/
-                    ├── ClientUploader.java
-                    ├── ClientDownloader.java
-                    └── FileSplitter.java
+                    ├── ClientRoundTripTest.java
+                    └── FileSplitterTest.java
 ```                    
