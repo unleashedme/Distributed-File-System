@@ -102,7 +102,7 @@ public class DataNode {
     public  static void acceptChunks(ServerSocket serverSocket, String nodeId){
         File storageDir = new File("datanode_storage_" + nodeId);
         storageDir.mkdirs();
-        while(true){
+        while(!serverSocket.isClosed()){
             try(Socket clientSocket = serverSocket.accept();
                 InputStream in = clientSocket.getInputStream();
                 OutputStream out = clientSocket.getOutputStream();
@@ -122,8 +122,10 @@ public class DataNode {
                     File chunkFile = new File(storageDir, chunkName);
                     if(chunkFile.delete()){
                         System.out.println("purged corrupted chunk: "+chunkName);
-                        continue;
+                    }else{
+                        System.err.println("Failed to purge chunk: "+chunkName);
                     }
+                    continue;
                 }
 
                 else if(header.startsWith("DOWNLOAD_CHUNK|")){

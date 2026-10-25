@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClientUploader {
-    public static void uploadFile(FileMetadata metadata, String chunkDirectory){
+    public static boolean uploadFile(FileMetadata metadata, String chunkDirectory){
         try(Socket nameNodeSocket = new Socket(Constants.NAMENODE_IP, Constants.NAMENODE_PORT);
             PrintWriter nameNodeOut = new PrintWriter(nameNodeSocket.getOutputStream(), true);
             BufferedReader nameNodeIn = new BufferedReader(new InputStreamReader(nameNodeSocket.getInputStream()))){
@@ -28,7 +28,7 @@ public class ClientUploader {
             String regResponse = nameNodeIn.readLine();
             if(!"SUCCESS".equals(regResponse)){
                 System.err.println("NameNode refused file registration.");
-                return;
+                return false;
             }
 
 
@@ -38,7 +38,7 @@ public class ClientUploader {
             String response = nameNodeIn.readLine();
             if(response == null || response.startsWith("Error")){
                 System.err.println("Upload failed: "+ response);
-                return;
+                return false;
             }
 
 
@@ -49,12 +49,14 @@ public class ClientUploader {
             }
 
             System.out.println("Upload complete!");
+            return true;
         }catch (Exception e){
             System.err.println("Client Error: "+e.getMessage());
+            return false;
         }
     }
 
-    public static void sendChunkToDataNode(String pipelineStr, String chunkName, String chunkDir){
+    public static void sendChunkToDataNode(String pipelineStr, String chunkName, String chunkDir) throws IOException {
         File chunkFile = new File(chunkDir, chunkName);
 
         String[] pipeline = pipelineStr.split(",",2);
@@ -84,15 +86,16 @@ public class ClientUploader {
             dataNodeSocket.shutdownOutput();
 
             String ack = in.readLine();
-            if(ack.equals("SUCCESS")){
+            if("SUCCESS".equals(ack)){
                 System.out.println("Upload confirmed for "+ chunkName);
             }
             else{
                 System.err.println("Upload rejected for "+chunkName+" - "+ack);
-                throw new RuntimeException("Datanode rejected the chunk");
+                throw new IOException("Datanode rejected "+chunkName+": "+ack);
             }
-        }catch (Exception e){
+        }catch (IOException e){
             System.err.println("Failed to send "+ chunkName +":"+ e.getMessage());
+            throw e;
         }
     }
 

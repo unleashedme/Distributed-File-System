@@ -24,7 +24,7 @@ public class ClientDownloader {
 
         File outputFile = new File(outputFileName);
 
-        try(FileOutputStream out = new FileOutputStream(outputFile, true)){
+        try(FileOutputStream out = new FileOutputStream(outputFile)){
 
             for(String chunkData: chunkNames){
                 String[] parts = chunkData.split(":");

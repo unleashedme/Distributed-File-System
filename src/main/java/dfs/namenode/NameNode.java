@@ -206,7 +206,10 @@ public class NameNode {
 
                     String expectedHash = expectedHashes.get(chunkName);
 
-                    if(!expectedHash.equals(actualHash)){
+                    if(expectedHash == null){
+                        System.err.println("Scrub report for unknown chunk "+chunkName+" from "+nodeId+". Ignoring");
+                    }
+                    else if(!expectedHash.equals(actualHash)){
                         System.err.println("CRITICAL: Bit rot detected on "+nodeId+" for "+chunkName);
                         triggerActiveHealing(nodeId, chunkName);
                     }
